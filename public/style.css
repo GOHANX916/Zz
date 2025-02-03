@@ -1,0 +1,112 @@
+/* Reset styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Full-screen layout */
+body {
+    background-color: #ece5dd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Chat container */
+.chat-container {
+    width: 100%;
+    max-width: 450px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+/* Header bar */
+.chat-header {
+    background-color: #075e54;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* Chat messages */
+.chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background-color: #dcf8c6;
+}
+
+/* Message bubbles */
+.message {
+    max-width: 80%;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 8px;
+    font-size: 14px;
+    word-wrap: break-word;
+    position: relative;
+}
+
+/* Sent messages */
+.sent {
+    background-color: #25d366;
+    align-self: flex-end;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+/* Received messages */
+.received {
+    background-color: #ffffff;
+    align-self: flex-start;
+    color: black;
+    border-bottom-left-radius: 2px;
+    border: 1px solid #ddd;
+}
+
+/* Timestamp */
+.timestamp {
+    font-size: 10px;
+    opacity: 0.7;
+    position: absolute;
+    bottom: 3px;
+    right: 8px;
+}
+
+/* Input area */
+.input-container {
+    display: flex;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-top: 1px solid #ddd;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 20px;
+    outline: none;
+}
+
+button {
+    background-color: #128c7e;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 50%;
+    margin-left: 8px;
+    cursor: pointer;
+}

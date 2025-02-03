@@ -7,10 +7,10 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-const PORT = process.env.PORT || 3000; // Use Render's port
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.static('public')); // Serve frontend files
+app.use(express.static('public'));
 
 const clients = new Set();
 
@@ -19,10 +19,10 @@ wss.on('connection', (ws) => {
     clients.add(ws);
 
     ws.on('message', (message) => {
-        console.log(`Received: ${message.toString()}`);
+        const messageData = JSON.parse(message.toString());
         clients.forEach(client => {
             if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message.toString());
+                client.send(JSON.stringify(messageData));
             }
         });
     });
@@ -34,5 +34,5 @@ wss.on('connection', (ws) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
