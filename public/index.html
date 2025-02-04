@@ -5,69 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Roboto', sans-serif; }
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-        }
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #f0f0f0;
-        }
-        .input-container {
-            display: flex;
-            padding: 10px;
-            background: #ffffff;
-            border-top: 1px solid #ddd;
-        }
-        .input-container input {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 20px;
-            outline: none;
-            background: #f0f0f0;
-        }
-        .input-container button {
-            background-color: #25d366;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 50%;
-            margin-left: 8px;
-            cursor: pointer;
-        }
-    </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-100 flex justify-center items-center h-screen">
 
-    <div class="chat-container">
-        <!-- Chat Header -->
-        <div class="flex items-center justify-between p-4 bg-green-500 text-white">
-            <div class="flex items-center">
-                <img src="https://i.ibb.co/Mkvtxwn9/imresizer-1733319389980.png" alt="Profile" class="w-10 h-10 rounded-full">
-                <div class="ml-3">
-                    <p class="font-bold">X</p>
-                    <p class="text-sm" id="status">Online</p>
-                </div>
-            </div>
-            <i class="fas fa-ellipsis-v"></i>
-        </div>
+    <!-- Login & Sign-Up Form -->
+    <div id="auth-container" class="bg-white p-6 rounded shadow-lg text-center">
+        <h2 id="auth-title" class="text-2xl font-bold mb-4">Login</h2>
+        <input id="email" type="email" placeholder="Email" class="border p-2 rounded w-full mb-2">
+        <input id="username" type="text" placeholder="Username (Sign-Up Only)" class="border p-2 rounded w-full mb-2 hidden">
+        <input id="password" type="password" placeholder="Password" class="border p-2 rounded w-full mb-2">
+        <button onclick="authenticate()" class="bg-green-500 text-white p-2 rounded w-full">Submit</button>
+        <p class="text-sm text-gray-500 mt-2">
+            <span id="toggle-auth" class="cursor-pointer text-blue-500">Create an account</span>
+        </p>
+    </div>
 
-        <!-- Chat Messages -->
-        <div id="chat-box" class="chat-box"></div>
-
-        <!-- Message Input -->
+    <!-- Chat Interface -->
+    <div id="chat-container" class="hidden chat-container">
+        <div class="chat-box" id="chat-box"></div>
         <div class="input-container">
             <input id="message-input" type="text" placeholder="Type a message">
             <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
@@ -75,40 +30,40 @@
     </div>
 
     <script>
-        const ws = new WebSocket('wss://chat-qqhd.onrender.com');
-        const chatBox = document.getElementById("chat-box");
-        const messageInput = document.getElementById("message-input");
+        let isSignUp = false;
+        let token = "";
 
-        ws.onmessage = (event) => {
-            const messageData = JSON.parse(event.data);
-            addMessage(messageData.text, "received", messageData.time);
-        };
+        document.getElementById("toggle-auth").addEventListener("click", () => {
+            isSignUp = !isSignUp;
+            document.getElementById("auth-title").innerText = isSignUp ? "Sign Up" : "Login";
+            document.getElementById("username").classList.toggle("hidden", !isSignUp);
+            document.getElementById("toggle-auth").innerText = isSignUp ? "Already have an account?" : "Create an account";
+        });
 
-        function sendMessage() {
-            const message = messageInput.value.trim();
-            if (message !== "") {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const messageData = { text: message, time: time };
-                ws.send(JSON.stringify(messageData));
-                addMessage(message, "sent", time);
-                messageInput.value = "";
-            }
+        function authenticate() {
+            const email = document.getElementById("email").value;
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            fetch(isSignUp ? "/signup" : "/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, username, password })
+            }).then(res => res.json()).then(data => {
+                if (data.token) {
+                    token = data.token;
+                    document.getElementById("auth-container").classList.add("hidden");
+                    document.getElementById("chat-container").classList.remove("hidden");
+                    connectWebSocket();
+                } else {
+                    alert(data.message);
+                }
+            });
         }
 
-        function addMessage(text, type, time) {
-            const messageDiv = document.createElement("div");
-            messageDiv.classList.add("flex", "mb-4", type === "sent" ? "justify-end" : "justify-start");
-
-            const messageBubble = `
-                <div class="${type === 'sent' ? 'bg-green-500 text-white' : 'bg-gray-200'} p-3 rounded-lg max-w-xs">
-                    <p>${text}</p>
-                    <span class="text-xs ${type === 'sent' ? 'text-gray-200' : 'text-gray-500'}">${time}</span>
-                </div>
-            `;
-
-            messageDiv.innerHTML = messageBubble;
-            chatBox.appendChild(messageDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
+        function connectWebSocket() {
+            const ws = new WebSocket(`wss://chat-qqhd.onrender.com?token=${token}`);
+            ws.onmessage = event => console.log("New Message:", event.data);
         }
     </script>
 
