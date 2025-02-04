@@ -3,67 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Chat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Chat App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #chat-container { display: none; }
+        #messages { height: 300px; overflow-y: scroll; border: 1px solid #ddd; padding: 10px; }
+        input, button { margin: 5px; padding: 10px; }
+    </style>
 </head>
-<body class="bg-gray-100 flex justify-center items-center h-screen">
+<body>
 
-    <!-- Login & Sign-Up Form -->
-    <div id="auth-container" class="bg-white p-6 rounded shadow-lg text-center">
-        <h2 id="auth-title" class="text-2xl font-bold mb-4">Login</h2>
-        <input id="email" type="email" placeholder="Email" class="border p-2 rounded w-full mb-2">
-        <input id="username" type="text" placeholder="Username (Sign-Up Only)" class="border p-2 rounded w-full mb-2 hidden">
-        <input id="password" type="password" placeholder="Password" class="border p-2 rounded w-full mb-2">
-        <button onclick="authenticate()" class="bg-green-500 text-white p-2 rounded w-full">Submit</button>
-        <p class="text-sm text-gray-500 mt-2">
-            <span id="toggle-auth" class="cursor-pointer text-blue-500">Create an account</span>
-        </p>
-    </div>
+    <h2>Login</h2>
+    <form id="login-form">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Login</button>
+    </form>
 
-    <!-- Chat Interface -->
-    <div id="chat-container" class="hidden chat-container">
-        <div class="chat-box" id="chat-box"></div>
-        <div class="input-container">
-            <input id="message-input" type="text" placeholder="Type a message">
-            <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
-        </div>
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+        <input type="email" id="signup-email" placeholder="Email" required>
+        <input type="text" id="signup-username" placeholder="Username" required>
+        <input type="password" id="signup-password" placeholder="Password" required>
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <div id="chat-container">
+        <h2>Chat Room</h2>
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Type a message...">
+        <button id="send-btn">Send</button>
     </div>
 
     <script>
-        let isSignUp = false;
-        let token = "";
+        let ws;
 
-        document.getElementById("toggle-auth").addEventListener("click", () => {
-            isSignUp = !isSignUp;
-            document.getElementById("auth-title").innerText = isSignUp ? "Sign Up" : "Login";
-            document.getElementById("username").classList.toggle("hidden", !isSignUp);
-            document.getElementById("toggle-auth").innerText = isSignUp ? "Already have an account?" : "Create an account";
-        });
+        // **Sign Up**
+        document.getElementById("signup-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const email = document.getElementById("signup-email").value;
+            const username = document.getElementById("signup-username").value;
+            const password = document.getElementById("signup-password").value;
 
-        function authenticate() {
-            const email = document.getElementById("email").value;
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-
-            fetch(isSignUp ? "/signup" : "/login", {
+            fetch("/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, username, password })
+            }).then(res => res.json()).then(data => alert(data.message));
+        });
+
+        // **Login**
+        document.getElementById("login-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
+
+            fetch("/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
             }).then(res => res.json()).then(data => {
-                if (data.token) {
-                    token = data.token;
-                    document.getElementById("auth-container").classList.add("hidden");
-                    document.getElementById("chat-container").classList.remove("hidden");
-                    connectWebSocket();
+                if (data.message === "Login successful") {
+                    document.getElementById("login-form").style.display = "none";
+                    document.getElementById("signup-form").style.display = "none";
+                    document.getElementById("chat-container").style.display = "block";
+                    setupWebSocket();
                 } else {
                     alert(data.message);
                 }
             });
-        }
+        });
 
-        function connectWebSocket() {
-            const ws = new WebSocket(`wss://chat-qqhd.onrender.com?token=${token}`);
-            ws.onmessage = event => console.log("New Message:", event.data);
+        // **WebSocket Connection**
+        function setupWebSocket() {
+            ws = new WebSocket("wss://chat-qqhd.onrender.com/"); // Update with Render WebSocket URL
+
+            ws.onmessage = (event) => {
+                const msgDiv = document.createElement("div");
+                msgDiv.textContent = event.data;
+                document.getElementById("messages").appendChild(msgDiv);
+            };
+
+            document.getElementById("send-btn").addEventListener("click", () => {
+                const message = document.getElementById("message-input").value;
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(message);
+                    document.getElementById("message-input").value = "";
+                }
+            });
         }
     </script>
 
